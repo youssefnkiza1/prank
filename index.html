@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Security Scan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(45deg, #0d0d0d, #1a1a2e);
+            color: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Matrix raining code effect */
+        .matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .matrix span {
+            position: absolute;
+            color: #0f0;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 2;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Windows-like header */
+        .windows-header {
+            background: linear-gradient(90deg, #005a9e, #0078d4);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .windows-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .windows-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .windows-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .close-btn { background: #ff5f57; }
+        .minimize-btn { background: #ffbd2e; }
+        .maximize-btn { background: #28ca42; }
+
+        /* Alert box */
+        .alert-box {
+            background: #1e1e1e;
+            border-radius: 0 0 8px 8px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+        }
+
+        .virus-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { color: #ff3333; transform: scale(1); }
+            50% { color: #ff6666; transform: scale(1.1); }
+        }
+
+        .alert-title {
+            text-align: center;
+            font-size: 32px;
+            color: #ff3333;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+        }
+
+        .alert-subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #ff9999;
+            margin-bottom: 30px;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            background: #333;
+            border-radius: 10px;
+            height: 25px;
+            margin: 30px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #ff3333, #ff6666);
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 25px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 3px #000;
+        }
+
+        /* Files list */
+        .files-list {
+            background: #2a2a2a;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            animation: scan 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        @keyframes scan {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-name {
+            color: #ddd;
+        }
+
+        .file-status {
+            color: #ff3333;
+            font-weight: bold;
+        }
+
+        /* Buttons */
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #0078d4, #005a9e);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(90deg, #d40000, #a00000);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Fake terminal */
+        .terminal {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+            height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+
+        /* Game section */
+        .game-container {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .game-title {
+            font-size: 36px;
+            color: #4dff4d;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(77, 255, 77, 0.5);
+        }
+
+        .virus-count {
+            font-size: 48px;
+            color: #ff3333;
+            margin: 20px 0;
+        }
+
+        .virus {
+            position: absolute;
+            font-size: 40px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s;
+            z-index: 3;
+        }
+
+        .virus:hover {
+            transform: scale(1.2);
+        }
+
+        .score-board {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            display: inline-block;
+        }
+
+        .timer {
+            font-size: 28px;
+            color: #ffcc00;
+            margin: 20px 0;
+        }
+
+        .restart-btn {
+            background: linear-gradient(90deg, #00cc00, #009900);
+            color: white;
+            padding: 15px 40px;
+            font-size: 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none;
+        }
+
+        /* Win message */
+        .win-message {
+            display: none;
+            text-align: center;
+            padding: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            margin-top: 50px;
+        }
+
+        .win-title {
+            font-size: 48px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ff00;
+        }
+
+        .win-text {
+            font-size: 24px;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+
+        /* Easter egg */
+        .easter-egg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix raining code effect -->
+    <div class="matrix" id="matrix"></div>
+
+    <div class="container">
+        <!-- Windows-like header -->
+        <div class="windows-header">
+            <div class="windows-title">🔒 Windows Security Center - Critical Alert</div>
+            <div class="windows-controls">
+                <div class="windows-btn minimize-btn" onclick="minimizeWindow()"></div>
+                <div class="windows-btn maximize-btn" onclick="maximizeWindow()"></div>
+                <div class="windows-btn close-btn" onclick="closeWindow()"></div>
+            </div>
+        </div>
+
+        <!-- Main alert box -->
+        <div class="alert-box" id="alertBox">
+            <div class="virus-icon">⚠️</div>
+            <h1 class="alert-title">CRITICAL VIRUS DETECTED!</h1>
+            <p class="alert-subtitle">Your system has been compromised by multiple threats</p>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">Scanning system: 0%</div>
+            </div>
+
+            <div class="files-list" id="filesList">
+                <!-- Files will be added by JavaScript -->
+            </div>
+
+            <div class="buttons-container">
+                <button class="btn btn-primary" onclick="startCleanup()">🛡️ Start Cleanup</button>
+                <button class="btn btn-danger" onclick="showGame()">❌ Ignore Warning (Not Recommended)</button>
+            </div>
+
+            <!-- Fake terminal output -->
+            <div class="terminal" id="terminal">
+                <div class="terminal-line">C:\Windows\System32> scan /full /threat</div>
+                <div class="terminal-line">Initializing deep system scan...</div>
+                <div class="terminal-line">Scanning C:\Users\Public\Documents...</div>
+                <div class="terminal-line">[WARNING] Suspicious file detected: trojan.exe</div>
+                <div class="terminal-line">Scanning C:\Windows\Temp...</div>
+                <div class="terminal-line">[WARNING] Malware signature found: worm.sys</div>
+                <div class="terminal-line">Scanning registry entries...</div>
+                <div class="terminal-line">[CRITICAL] Rootkit detected in kernel memory</div>
+                <div class="terminal-line">Scanning network connections...</div>
+                <div class="terminal-line">[ALERT] Unauthorized outgoing connection detected</div>
+                <div class="terminal-line">----------------------------------------------</div>
+                <div class="terminal-line">SCAN COMPLETE: 127 THREATS DETECTED</div>
+                <div class="terminal-line">SYSTEM INTEGRITY: COMPROMISED</div>
+                <div class="terminal-line">RECOMMENDATION: IMMEDIATE ACTION REQUIRED</div>
+            </div>
+        </div>
+
+        <!-- Game section (hidden initially) -->
+        <div class="game-container" id="gameContainer">
+            <h1 class="game-title">VIRUS ELIMINATOR GAME</h1>
+            <p style="margin-bottom: 20px; font-size: 18px;">Click on the viruses before they multiply! You have 30 seconds.</p>
+            
+            <div class="timer" id="timer">30</div>
+            <div class="virus-count" id="virusCount">Viruses: 0</div>
+            
+            <div id="gameArea" style="position: relative; width: 100%; height: 500px; border: 2px solid #ff3333; border-radius: 10px; overflow: hidden; margin: 20px 0;">
+                <!-- Viruses will appear here -->
+            </div>
+            
+            <div class="score-board">
+                <h3>Score: <span id="score">0</span></h3>
+                <h3>Viruses Eliminated: <span id="eliminated">0</span>/50</h3>
+            </div>
+            
+            <button class="restart-btn" onclick="restartGame()">🔄 Play Again</button>
+        </div>
+
+        <!-- Win message -->
+        <div class="win-message" id="winMessage">
+            <h1 class="win-title">🎉 CONGRATULATIONS! 🎉</h1>
+            <p class="win-text">You've successfully eliminated all viruses from the system!</p>
+            <p class="win-text" style="color: #ffcc00;">Your computer is now safe and secure.</p>
+            <p class="win-text" style="font-size: 18px; margin-top: 30px;">This was just a prank! Your computer is perfectly fine. 😄</p>
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Back to "Virus Alert"</button>
+        </div>
+    </div>
+
+    <!-- Easter egg -->
+    <div class="easter-egg" onclick="showEasterEgg()">Psst... click me</div>
+
+    <script>
+        // Matrix raining code effect
+        function createMatrix() {
+            const matrix = document.getElementById('matrix');
+            const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+            
+            for (let i = 0; i < 100; i++) {
+                const span = document.createElement('span');
+                span.textContent = chars[Math.floor(Math.random() * chars.length)];
+                span.style.left = Math.random() * 100 + 'vw';
+                span.style.animationDelay = Math.random() * 10 + 's';
+                span.style.animationDuration = (Math.random() * 5 + 3) + 's';
+                matrix.appendChild(span);
+                
+                // Remove after animation completes
+                setTimeout(() => {
+                    span.remove();
+                }, 8000);
+            }
+        }
+
+        // Create matrix effect every 200ms
+        setInterval(createMatrix, 200);
+
+        // Fake virus scanning
+        const fakeFiles = [
+            {name: "C:\\Windows\\System32\\winlogon.exe", status: "INFECTED"},
+            {name: "C:\\Users\\Public\\Documents\\important.exe", status: "TROJAN"},
+            {name: "C:\\Windows\\Temp\\update.bat", status: "MALWARE"},
+            {name: "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", status: "COMPROMISED"},
+            {name: "C:\\Program Files\\Common Files\\services.dll", status: "ROOTKIT"},
+            {name: "System Memory (Kernel)", status: "EXPLOITED"},
+            {name: "Network Connection: 192.168.1.105:4444", status: "BACKDOOR"},
+            {name: "Browser Cookies", status: "DATA_MINING"},
+            {name: "Bitcoin Wallet", status: "ENCRYPTED"},
+            {name: "User Profile Data", status: "STOLEN"}
+        ];
+
+        let scanProgress = 0;
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const filesList = document.getElementById('filesList');
+        const terminal = document.getElementById('terminal');
+
+        // Start fake scanning on page load
+        setTimeout(() => {
+            const scanInterval = setInterval(() => {
+                scanProgress += Math.random() * 5;
+                if (scanProgress > 100) scanProgress = 100;
+                
+                progressBar.style.width = scanProgress + '%';
+                progressText.textContent = `Scanning system: ${Math.floor(scanProgress)}%`;
+                
+                // Add fake files randomly
+                if (scanProgress > 20 && filesList.children.length < 5) {
+                    addFakeFile();
+                }
+                if (scanProgress > 50 && filesList.children.length < 8) {
+                    addFakeFile();
+                }
+                if (scanProgress > 80 && filesList.children.length < 10) {
+                    addFakeFile();
+                }
+                
+                // Show terminal at 50%
+                if (scanProgress > 50 && terminal.style.display === 'none') {
+                    terminal.style.display = 'block';
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+                
+                if (scanProgress >= 100) {
+                    clearInterval(scanInterval);
+                    progressText.textContent = "SCAN COMPLETE - SYSTEM COMPROMISED";
+                    progressBar.style.background = "linear-gradient(90deg, #ff0000, #ff3333)";
+                }
+            }, 200);
+        }, 1000);
+
+        function addFakeFile() {
+            const file = fakeFiles[filesList.children.length % fakeFiles.length];
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.style.animationDelay = (filesList.children.length * 0.1) + 's';
+            fileItem.innerHTML = `
+                <span class="file-name">${file.name}</span>
+                <span class="file-status">${file.status}</span>
+            `;
+            filesList.appendChild(fileItem);
+            filesList.scrollTop = filesList.scrollHeight;
+        }
+
+        // Window control buttons
+        function minimizeWindow() {
+            document.querySelector('.alert-box').style.transform = 'scale(0.9)';
+            document.querySelector('.alert-box').style.opacity = '0.7';
+            setTimeout(() => {
+                document.querySelector('.alert-box').style.transform = 'scale(1)';
+                document.querySelector('.alert-box').style.opacity = '1';
+            }, 1000);
+        }
+
+        function maximizeWindow() {
+            document.querySelector('.alert-box').classList.toggle('maximized');
+        }
+
+        function closeWindow() {
+            const box = document.querySelector('.alert-box');
+            box.style.transform = 'translateY(-100vh)';
+            box.style.opacity = '0';
+            setTimeout(() => {
+                alert("Just kidding! You can't close a critical security alert! 😄");
+                box.style.transform = 'translateY(0)';
+                box.style.opacity = '1';
+            }, 1000);
+        }
+
+        // Start cleanup (fake)
+        function startCleanup() {
+            progressText.textContent = "CLEANUP IN PROGRESS...";
+            progressBar.style.background = "linear-gradient(90deg, #00cc00, #00ff00)";
+            progressBar.style.width = '100%';
+            
+            const cleanupInterval = setInterval(() => {
+                const files = document.querySelectorAll('.file-item');
+                if (files.length > 0) {
+                    const randomFile = files[Math.floor(Math.random() * files.length)];
+                    randomFile.querySelector('.file-status').textContent = "CLEANED";
+                    randomFile.querySelector('.file-status').style.color = "#00ff00";
+                } else {
+                    clearInterval(cleanupInterval);
+                    progressText.textContent = "CLEANUP COMPLETE - SYSTEM SECURE";
+                    
+                    // Show completion message
+                    setTimeout(() => {
+                        alert("✅ System cleanup completed successfully!\n\nThis was just a prank! Your computer is perfectly fine. 😄\n\nThanks for playing along!");
+                        location.reload();
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        // Game variables
+        let score = 0;
+        let virusesEliminated = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let gameTimer;
+
+        // Show game
+        function showGame() {
+            document.getElementById('alertBox').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            document.querySelector('.windows-title').textContent = "🎮 Virus Eliminator Game";
+            
+            // Start the game
+            startGame();
+        }
+
+        // Start the game
+        function startGame() {
+            score = 0;
+            virusesEliminated = 0;
+            timeLeft = 30;
+            gameActive = true;
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('eliminated').textContent = virusesEliminated;
+            document.getElementById('virusCount').textContent = "Viruses: 0";
+            document.getElementById('timer').textContent = timeLeft;
+            document.querySelector('.restart-btn').style.display = 'none';
+            
+            // Clear game area
+            document.getElementById('gameArea').innerHTML = '';
+            
+            // Start timer
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Create viruses
+            createVirus();
+            setInterval(createVirus, 1000);
+        }
+
+        // Create a virus
+        function createVirus() {
+            if (!gameActive) return;
+            
+            const virus = document.createElement('div');
+            virus.className = 'virus';
+            virus.textContent = '🦠';
+            virus.style.left = Math.random() * 85 + '%';
+            virus.style.top = Math.random() * 85 + '%';
+            virus.style.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            
+            // Make virus move
+            let x = Math.random() * 85;
+            let y = Math.random() * 85;
+            let xSpeed = (Math.random() - 0.5) * 4;
+            let ySpeed = (Math.random() - 0.5) * 4;
+            
+            virus.style.left = x + '%';
+            virus.style.top = y + '%';
+            
+            // Update virus position
+            const moveVirus = () => {
+                if (!gameActive) return;
+                
+                x += xSpeed;
+                y += ySpeed;
+                
+                // Bounce off walls
+                if (x <= 0 || x >= 85) xSpeed = -xSpeed;
+                if (y <= 0 || y >= 85) ySpeed = -ySpeed;
+                
+                virus.style.left = x + '%';
+                virus.style.top = y + '%';
+                
+                requestAnimationFrame(moveVirus);
+            };
+            
+            // Click to eliminate
+            virus.onclick = () => {
+                if (!gameActive) return;
+                
+                // Explosion effect
+                virus.style.transition = 'all 0.3s';
+                virus.style.transform = 'scale(2)';
+                virus.style.opacity = '0';
+                
+                // Update score
+                score += 10;
+                virusesEliminated++;
+                
+                document.getElementById('score').textContent = score;
+                document.getElementById('eliminated').textContent = virusesEliminated;
+                document.getElementById('virusCount').textContent = `Viruses: ${Math.max(0, 10 - virusesEliminated)}`;
+                
+                // Remove virus
+                setTimeout(() => {
+                    virus.remove();
+                }, 300);
+                
+                // Play sound
+                playClickSound();
+                
+                // Check win condition
+                if (virusesEliminated >= 50) {
+                    winGame();
+                }
+            };
+            
+            document.getElementById('gameArea').appendChild(virus);
+            moveVirus();
+        }
+
+        // End game
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            document.getElementById('virusCount').textContent = "TIME'S UP!";
+            document.getElementById('virusCount').style.color = "#ff3333";
+            document.querySelector('.restart-btn').style.display = 'inline-block';
+            
+            // Show message
+            if (virusesEliminated >= 50) {
+                winGame();
+            } else {
+                setTimeout(() => {
+                    alert(`Game Over!\n\nYou eliminated ${virusesEliminated} viruses and scored ${score} points.\n\nTry again to eliminate all 50 viruses!`);
+                }, 500);
+            }
+        }
+
+        // Win game
+        function winGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'block';
+            document.querySelector('.windows-title').textContent = "🎉 VIRUS ELIMINATION SUCCESSFUL!";
+            
+            // Confetti effect
+            createConfetti();
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#ff3333', '#33ff33', '#3333ff', '#ffff33', '#ff33ff', '#33ffff'];
+            
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = '50%';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-20px';
+                confetti.style.zIndex = '9999';
+                
+                document.body.appendChild(confetti);
+                
+                // Animate confetti
+                const animation = confetti.animate([
+                    { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                    { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+                });
+                
+                // Remove after animation
+                animation.onfinish = () => confetti.remove();
+            }
+        }
+
+        // Restart game
+        function restartGame() {
+            document.getElementById('virusCount').style.color = "#ff3333";
+            startGame();
+        }
+
+        // Play click sound
+        function playClickSound() {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.frequency.value = 800 + Math.random() * 400;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+            
+            oscillator.start(context.currentTime);
+            oscillator.stop(context.currentTime + 0.1);
+        }
+
+        // Easter egg
+        function showEasterEgg() {
+            const message = document.createElement('div');
+            message.style.position = 'fixed';
+            message.style.top = '50%';
+            message.style.left = '50%';
+            message.style.transform = 'translate(-50%, -50%)';
+            message.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+            message.style.color = '#0f0';
+            message.style.padding = '30px';
+            message.style.borderRadius = '10px';
+            message.style.border = '2px solid #0f0';
+            message.style.zIndex = '10000';
+            message.style.fontFamily = "'Courier New', monospace";
+            message.style.textAlign = 'center';
+            message.style.maxWidth = '80%';
+            message.innerHTML = `
+                <h2>🐰 EASTER EGG FOUND! 🐰</h2>
+                <p>You discovered the secret message!</p>
+                <p style="margin: 20px 0; font-size: 18px;">This is just a prank page - no real viruses here!</p>
+                <p>Made with ❤️ for some harmless fun</p>
+                <p style="margin-top: 20px; font-size: 12px; color: #888">If someone actually fell for this, give them a high-five! ✋</p>
+                <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 10px 20px; background: #0f0; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Close</button>
+            `;
+            
+            document.body.appendChild(message);
+        }
+
+        // Initialize
+        window.onload = () => {
+            // Add initial fake files
+            for (let i = 0; i < 3; i++) {
+                setTimeout(addFakeFile, i * 300);
+            }
+            
+            // Play ominous sound on load
+            setTimeout(() => {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.1, context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
